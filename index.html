@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AG: Living Sculpture Meditation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #050807; font-family: 'Georgia', serif; }
+        
+        #app-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: url('https://imgbox.com') center center no-repeat;
+            background-size: cover;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9);
+            overflow: hidden;
+        }
+
+        /* Дыхание бабы и ткани (эффект живой скульптуры) */
+        #breathing-layer {
+            position: absolute; width: 100%; height: 100%;
+            background: inherit; background-size: inherit; background-position: inherit;
+            animation: breathe 5s ease-in-out infinite;
+            transform-origin: 55% 40%; z-index: 2;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.015); filter: brightness(1.08); }
+        }
+
+        /* Интерактивные зоны */
+        .touch-zone { position: absolute; cursor: pointer; z-index: 10; transform: translate(-50%, -50%); border-radius: 50%; }
+        
+        /* Клеймо AG со всевидящим оком */
+        #ag-brand-zone { width: 36%; height: 20%; left: 22%; bottom: 4%; }
+        #eye-blink {
+            position: absolute; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); border-radius: 50%;
+            opacity: 0; transition: opacity 0.1s ease-in-out; pointer-events: none;
+            box-shadow: inset 0 0 20px #000;
+        }
+        #eye-blink.active { opacity: 0.95; }
+
+        /* Зоны птиц для дофаминовой петли */
+        #owl-zone { width: 20%; height: 18%; left: 40%; top: 40%; }
+        #bird-top-left { width: 16%; height: 12%; left: 16%; top: 28%; }
+        #bird-top-center { width: 18%; height: 14%; left: 34%; top: 7%; }
+        #bird-top-right { width: 16%; height: 12%; left: 76%; top: 12%; }
+        #bird-mid-right { width: 18%; height: 14%; left: 88%; top: 25%; }
+        #bird-low-right { width: 16%; height: 12%; left: 80%; top: 52%; }
+
+        /* Алые неоновые губы */
+        #lips-zone { width: 8%; height: 4%; left: 59%; top: 24%; }
+        #lips-glow {
+            position: absolute; width: 100%; height: 100%;
+            background: #ff0033; filter: blur(8px); border-radius: 50%;
+            opacity: 0; transition: opacity 0.15s; pointer-events: none;
+        }
+        #lips-glow.active { opacity: 0.7; }
+
+        /* Золотые искры за пальцем */
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
+        
+        /* НЛП-инструкция на старте */
+        #hint-text {
+            position: absolute; bottom: 30%; left: 50%; transform: translateX(-50%);
+            color: #d4af37; font-size: 11px; letter-spacing: 3px; text-align: center;
+            text-transform: uppercase; z-index: 20; pointer-events: none;
+            text-shadow: 0 0 10px #000; animation: pulseGlow 3s infinite;
+        }
+        @keyframes pulseGlow { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.8; text-shadow: 0 0 15px #d4af37; } }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- Слой живого дыхания -->
+        <div id="breathing-layer"></div>
+        
+        <div id="hint-text">Надень наушники.<br>Дотронься до Всевидящего Ока...</div>
+        
+        <!-- Клеймо AG -->
+        <div id="ag-brand-zone" class="touch-zone">
+            <div id="eye-blink"></div>
+        </div>
+        
+        <!-- Хор Птиц-Вестников -->
+        <div id="owl-zone" class="touch-zone"></div>
+        <div id="bird-top-left" class="touch-zone"></div>
+        <div id="bird-top-center" class="touch-zone"></div>
+        <div id="bird-top-right" class="touch-zone"></div>
+        <div id="bird-mid-right" class="touch-zone"></div>
+        <div id="bird-low-right" class="touch-zone"></div>
+        
+        <!-- Губы бабы -->
+        <div id="lips-zone" class="touch-zone">
+            <div id="lips-glow"></div>
+        </div>
+
+        <!-- Золотой холст -->
+        <canvas id="canvas-sparkles"></canvas>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let ambientSource = null;
+        let binauralSource = null;
+
+        // Генерация бинаурального ритма (Тета-волны 4.5 Гц для транса)
+        function startBinauralAlpha() {
+            const merger = audioCtx.createChannelMerger(2);
+            
+            const oscL = audioCtx.createOscillator();
+            oscL.frequency.setValueAtTime(100, audioCtx.currentTime); // Левое ухо: 100 Гц
+            const gainL = audioCtx.createGain();
+            gainL.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            oscL.connect(gainL).connect(merger, 0, 0);
+
+            const oscR = audioCtx.createOscillator();
+            oscR.frequency.setValueAtTime(104.5, audioCtx.currentTime); // Правое ухо: 104.5 Гц
+            const gainR = audioCtx.createGain();
+            gainR.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            oscR.connect(gainR).connect(merger, 0, 1);
+
+            merger.connect(audioCtx.destination);
+            oscL.start(); oscR.start();
+        }
+
+        // Низкий космический индастриал-гул
+        function startDarkAmbient() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(45, audioCtx.currentTime); // Утробный бас
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(90, audioCtx.currentTime);
+
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            
+            osc.connect(filter).connect(gain).connect(audioCtx.destination);
+            osc.start();
+        }
+
+        // Дофаминовая петля: случайные пространственные звуки птиц
+        const birdFrequencies =;
+        function triggerBirdSound(isOwl) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            // НЛП-фишка: эффект редкого случайного вознаграждения (1 шанс из 8)
+            const isSecretTrig = Math.random() < 0.12;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+
+            if (isOwl) {
+                // Глубокое эхо-уханье полярной совы
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+            } else if (isSecretTrig) {
+                // Редкий потусторонний мистический шепот / аккорд
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(55, audioCtx.currentTime + 0.6);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            } else {
+                // Обычное стерео-чириканье
+                osc.type = 'sine';
+                const randomFreq = birdFrequencies[Math.floor(Math.random() * birdFrequencies.length)];
+                osc.frequency.setValueAtTime(randomFreq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(randomFreq * 1.4, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            }
+
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+            if (panner) {
+                // Раскидываем звук случайно по ушам (3D стерео)
+                panner.pan.setValueAtTime(Math.random() * 2 - 1, audioCtx.currentTime);
+                osc.connect(panner).connect(gain).connect(audioCtx.destination);
+            } else {
+                osc.connect(gain).connect(audioCtx.destination);
+            }
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.6);
+        }
+
+        // Тяжёлый деревянный щелчок Всевидящего Ока
+        function triggerEyeSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(70, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.16);
+        }
+
+        // Интерактив: Моргание Ока AG
+        const agZone = document.getElementById('ag-brand-zone');
+        const eyeBlink = document.getElementById('eye-blink');
+        agZone.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            triggerEyeSound();
+            eyeBlink.classList.add('active');
+            setTimeout(() => eyeBlink.classList.remove('active'), 120);
+        });
+
+        // Навешивание звуков на птиц
+        document.getElementById('owl-zone').addEventListener('pointerdown', (e) => { e.stopPropagation(); triggerBirdSound(true); });
+      
