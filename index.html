@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AG: Living Sculpture</title>
+    <title>AG: Forests of Madness 2.0</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #050807; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #050807; font-family: 'Georgia', serif; }
         
         #app-container {
-            position: relative;
-            width: 100%; height: 100%; max-width: 500px; margin: 0 auto;
-            background: url('ag-forest.png') center center no-repeat;
-            background-size: cover; box-shadow: 0 0 100px rgba(0,0,0,0.9);
-            overflow: hidden; cursor: pointer;
+            position: relative; width: 100%; height: 100%; max-width: 500px; margin: 0 auto;
+            background: url('ag-forest.png') center center no-repeat; background-size: cover;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9); overflow: hidden; cursor: pointer;
         }
 
-        /* Плавное гипнотическое дыхание бабы */
+        /* Гипнотическое дыхание бабы и тканей */
         #breathing-layer {
             position: absolute; width: 100%; height: 100%;
             background: inherit; background-size: inherit; background-position: inherit;
@@ -24,25 +22,32 @@
             transform-origin: 55% 42%; z-index: 2; pointer-events: none;
         }
         @keyframes breathe {
-            0%, 100% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.018); filter: brightness(1.07); }
+            0%, 100% { transform: scale(1) translate(0, 0); filter: brightness(1); }
+            50% { transform: scale(1.022) translate(2px, -1px); filter: brightness(1.09); }
         }
 
         /* Интерактивные зоны тапов */
         .touch-zone { position: absolute; z-index: 10; transform: translate(-50%, -50%); border-radius: 50%; -webkit-tap-highlight-color: transparent; }
         
-        /* Клеймо бренда AG */
+        /* Клеймо бренда AG со всевидящим оком */
         #ag-brand-zone { width: 34%; height: 18%; left: 22%; bottom: 5%; }
         #eye-blink {
             position: absolute; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.88); border-radius: 50%;
+            background: rgba(0, 0, 0, 0.9); border-radius: 50%;
             opacity: 0; transition: opacity 0.1s ease-in-out; pointer-events: none;
             box-shadow: inset 0 0 25px #000;
         }
         #eye-blink.active { opacity: 0.95; }
 
-        /* Полярная сова */
+        /* Полярная сова на руке */
         #owl-zone { width: 22%; height: 18%; left: 40%; top: 40%; }
+
+        /* Хор Птиц-Вестников вокруг */
+        #bird-top-left { width: 16%; height: 12%; left: 16%; top: 28%; }
+        #bird-top-center { width: 18%; height: 14%; left: 34%; top: 7%; }
+        #bird-top-right { width: 16%; height: 12%; left: 76%; top: 12%; }
+        #bird-mid-right { width: 18%; height: 14%; left: 88%; top: 25%; }
+        #bird-low-right { width: 16%; height: 12%; left: 80%; top: 52%; }
 
         /* Алые губы бабы */
         #lips-zone { width: 10%; height: 5%; left: 59%; top: 24%; }
@@ -51,16 +56,16 @@
             background: #ff0033; filter: blur(10px); border-radius: 50%;
             opacity: 0; transition: opacity 0.15s; pointer-events: none;
         }
-        #lips-glow.active { opacity: 0.75; }
+        #lips-glow.active { opacity: 0.8; }
 
         /* Золотые искры за пальцем */
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
         
-        /* Текст-подсказка, исчезает при первом тапе */
+        /* Подсказка для 1-го клика */
         #start-hint {
             position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%);
-            color: #d4af37; font-family: 'Georgia', serif; font-size: 13px; letter-spacing: 3px;
-            text-align: center; text-transform: uppercase; z-index: 20; pointer-events: none;
+            color: #d4af37; font-size: 13px; letter-spacing: 3px; text-align: center;
+            text-transform: uppercase; z-index: 20; pointer-events: none;
             text-shadow: 0 0 15px #000; animation: pulseGlow 2.5s infinite;
         }
         @keyframes pulseGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; text-shadow: 0 0 20px #d4af37; } }
@@ -74,111 +79,124 @@
         
         <div id="ag-brand-zone" class="touch-zone"><div id="eye-blink"></div></div>
         <div id="owl-zone" class="touch-zone"></div>
+        
+        <!-- Полный хор птичек на своих местах -->
+        <div id="bird-top-left" class="touch-zone"></div>
+        <div id="bird-top-center" class="touch-zone"></div>
+        <div id="bird-top-right" class="touch-zone"></div>
+        <div id="bird-mid-right" class="touch-zone"></div>
+        <div id="bird-low-right" class="touch-zone"></div>
+        
         <div id="lips-zone" class="touch-zone"><div id="lips-glow"></div></div>
 
         <canvas id="canvas-sparkles"></canvas>
     </div>
 
     <script>
-        // Стандартные аудио-файлы для 100% работы на Android в один клик
-        const sndAmbient = new Audio('https://soundhelix.com'); // Базовый плавный поток (для тестов подвязан чистый поток, заменяемый на эмбиент)
-        sndAmbient.loop = true;
-        sndAmbient.volume = 0.5;
+        let audioCtx = null;
+        let bL_osc = null, bR_osc = null;
 
-        const sndOwl = new Audio('https://google.com'); // Честное 3D уханье совы
-        const sndClick = new Audio('https://google.com'); // Тяжёлый щелчок клейма
+        // Генерация низкого, зацикленного бинаурального эмбиента на ходу
+        function startHtonicAmbient() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const merger = audioCtx.createChannelMerger(2);
+            
+            bL_osc = audioCtx.createOscillator();
+            bL_osc.type = 'sawtooth';
+            bL_osc.frequency.setValueAtTime(50, audioCtx.currentTime); // 50 Гц бас в левое ухо
+            const filterL = audioCtx.createBiquadFilter();
+            filterL.type = 'lowpass'; filterL.frequency.setValueAtTime(70, audioCtx.currentTime);
+            const gainL = audioCtx.createGain(); gainL.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            bL_osc.connect(filterL).connect(gainL).connect(merger, 0, 0);
 
-        // Подготовка звуков к быстрому старту
-        sndOwl.volume = 0.6;
-        sndClick.volume = 0.7;
+            bR_osc = audioCtx.createOscillator();
+            bR_osc.type = 'sawtooth';
+            bR_osc.frequency.setValueAtTime(54.5, audioCtx.currentTime); // 54.5 Гц в правое ухо (разница 4.5 Гц)
+            const filterR = audioCtx.createBiquadFilter();
+            filterR.type = 'lowpass'; filterR.frequency.setValueAtTime(70, audioCtx.currentTime);
+            const gainR = audioCtx.createGain(); gainR.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            bR_osc.connect(filterR).connect(gainR).connect(merger, 0, 1);
 
-        let isAudioPlaying = false;
-
-        // Включение всей магии в один естественный тап по экрану
-        const container = document.getElementById('app-container');
-        
-        function activateExperience() {
-            if (!isAudioPlaying) {
-                sndAmbient.play().catch(e => console.log("Блокировка звука"));
-                document.getElementById('start-hint').style.display = 'none';
-                isAudioPlaying = true;
-            }
+            merger.connect(audioCtx.destination);
+            bL_osc.start(); bR_osc.start();
         }
 
-        // Клеймо AG со всевидящим оком
-        const eyeBlink = document.getElementById('eye-blink');
-        document.getElementById('ag-brand-zone').addEventListener('click', (e) => {
-            e.stopPropagation();
-            activateExperience();
-            sndClick.currentTime = 0;
-            sndClick.play();
-            eyeBlink.classList.add('active');
-            setTimeout(() => eyeBlink.classList.remove('active'), 140);
-        });
+        // Синтезированные звуки птиц (Дофаминовая петля + случайная 3D панорама)
+        function playBirdSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
 
-        // Полярная сова
-        document.getElementById('owl-zone').addEventListener('click', (e) => {
-            e.stopPropagation();
-            activateExperience();
-            sndOwl.currentTime = 0;
-            sndOwl.play();
-        });
+            // НЛП-фишка: эффект редкого случайного вознаграждения (1 шанс из 7)
+            const isSecretTrig = Math.random() < 0.14;
 
-        // Алые губы бабы
-        const lipsGlow = document.getElementById('lips-glow');
-        document.getElementById('lips-zone').addEventListener('click', (e) => {
-            e.stopPropagation();
-            activateExperience();
-            sndOwl.currentTime = 0; // Случайный лесной триггер
-            sndOwl.play();
-            lipsGlow.classList.add('active');
-            setTimeout(() => lipsGlow.classList.remove('active'), 300);
-        });
+            if (type === 'owl') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.45);
+                gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                if (panner) panner.pan.setValueAtTime(-0.4, audioCtx.currentTime); // Слева
+            } else if (isSecretTrig) {
+                // Тот самый редкий потусторонний шепот/аккорд в ухо
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(190, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.7);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                if (panner) panner.pan.setValueAtTime(Math.random() * 2 - 1, audioCtx.currentTime);
+            } else {
+                // Разные частоты под каждую лесную птичку
+                osc.type = 'sine';
+                let freq = 800;
+                if (type === 'top-left') freq = 700;
+                if (type === 'top-center') freq = 1100;
+                if (type === 'top-right') freq = 950;
+                if (type === 'mid-right') freq = 1300;
+                if (type === 'low-right') freq = 600;
 
-        // Тап по фону леса
-        container.addEventListener('click', activateExperience);
-
-        // СИСТЕМА ЖИРНЫХ ЗОЛОТЫХ ИСКР ЗА ПАЛЬЦЕМ
-        const canvas = document.getElementById('canvas-sparkles');
-        const ctx = canvas.getContext('2d');
-        let sparks = [];
-
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resizeCanvas); resizeCanvas();
-
-        class Spark {
-            constructor(x, y) {
-                this.x = x; this.y = y;
-                this.size = Math.random() * 4.5 + 1.5;
-                this.speedX = Math.random() * 2 - 1;
-                this.speedY = Math.random() * -3 - 0.5; // Красиво сыпятся вверх
-                this.alpha = 1;
-                this.decay = Math.random() * 0.02 + 0.015;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.3, audioCtx.currentTime + 0.22);
+                gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
+                if (panner) panner.pan.setValueAtTime(Math.random() * 2 - 1, audioCtx.currentTime);
             }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= this.decay; }
-            draw() {
-                ctx.save(); ctx.globalAlpha = this.alpha;
-                ctx.shadowBlur = 15; ctx.shadowColor = '#e1b83a'; ctx.fillStyle = '#f3db83';
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
+
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            
+            if (panner) {
+                osc.connect(panner).connect(gain).connect(audioCtx.destination);
+            } else {
+                osc.connect(gain).connect(audioCtx.destination);
             }
+            
+            osc.start(); osc.stop(audioCtx.currentTime + 0.55);
         }
 
-        function handleMove(x, y) {
-            if (Math.random() < 0.4) { sparks.push(new Spark(x, y)); }
+        // Глухой щелчок Всевидящего Ока бренда AG
+        function playClickSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(75, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 0.16);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.16);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.17);
         }
-        window.addEventListener('touchmove', (e) => { handleMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
-        window.addEventListener('mousemove', (e) => { handleMove(e.clientX, e.clientY); });
 
-        function renderLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < sparks.length; i++) {
-                sparks[i].update(); sparks[i].draw();
-                if (sparks[i].alpha <= 0) { sparks.splice(i, 1); i--; }
-            }
-            requestAnimationFrame(renderLoop);
+        // Вздох алых губ бабы
+        function playLipSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(420, audioCtx.currentTime + 0.25);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.36);
         }
-        renderLoop();
-    </script>
-</body>
-</html>
+
+        let isPlaying = false;
+        function activate() {
+            if (!isPlaying) {
+                startHtonicAmbient();
