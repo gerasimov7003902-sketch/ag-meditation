@@ -21,7 +21,6 @@
             font-family: 'Cinzel', 'Georgia', serif;
             color: #e6ca65;
         }
-        /* Живой фон: плавно дышит */
         #bg-art {
             position: absolute;
             width: 100%;
@@ -29,18 +28,17 @@
             object-fit: cover;
             z-index: 1;
             pointer-events: none;
-            opacity: 0.15; /* Изначально темнее, пока не вошли */
+            opacity: 0.15;
             filter: contrast(1.3) brightness(0.4) grayscale(0.1);
             background-image: url('https://unsplash.com');
             background-size: cover;
             background-position: center;
         }
-        /* Класс активного дыхания, включится после старта */
         .active-breath {
             animation: breathing 6s infinite ease-in-out !important;
         }
         @keyframes breathing {
-            0%, 100 Tri-scale(1.0); filter: contrast(1.3) brightness(0.4); opacity: 0.35; }
+            0%, 100% { transform: scale(1.0); filter: contrast(1.3) brightness(0.4); opacity: 0.35; }
             50% { transform: scale(1.04); filter: contrast(1.3) brightness(0.55); opacity: 0.45; }
         }
         canvas {
@@ -51,9 +49,8 @@
             height: 100%;
             z-index: 2;
             mix-blend-mode: screen;
-            display: none; /* Появится после старта */
+            display: none;
         }
-        /* Экран входа — чтобы обойти блокировки браузеров */
         #start-screen {
             position: absolute;
             top: 0;
@@ -124,13 +121,11 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Запуск по клику на кнопку
         function startMeditation() {
             startScreen.style.display = 'none';
             canvas.style.display = 'block';
             bgArt.classList.add('active-breath');
             
-            // Запускаем легальный звук без банов браузера
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
             const osc = audioCtx.createOscillator();
@@ -152,7 +147,6 @@
             osc.start();
             lfo.start();
 
-            // Птички поют раз в 3 секунды
             setInterval(() => {
                 if (audioCtx && Math.random() > 0.3) {
                     const now = audioCtx.currentTime;
@@ -263,4 +257,16 @@
             ctx.fillStyle = 'rgba(2, 5, 4, 0.15)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        
+            for (let i = entities.length - 1; i >= 0; i--) {
+                entities[i].update();
+                entities[i].draw();
+                if (entities[i].alpha <= 0 || (entities[i].type === 'wave' && entities[i].radius >= entities[i].maxRadius)) {
+                    entities.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+</html>
+
