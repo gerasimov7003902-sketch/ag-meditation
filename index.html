@@ -21,7 +21,7 @@
             font-family: 'Cinzel', 'Georgia', serif;
             color: #e6ca65;
         }
-        /* Главный фон: Живая баба, которая плавно дышит */
+        /* Живой фон: плавно дышит */
         #bg-art {
             position: absolute;
             width: 100%;
@@ -29,18 +29,19 @@
             object-fit: cover;
             z-index: 1;
             pointer-events: none;
-            opacity: 0.4;
-            filter: contrast(1.3) brightness(0.5) grayscale(0.1);
-            /* Замени ссылку ниже на свой арт с бабой, если нужно! */
+            opacity: 0.15; /* Изначально темнее, пока не вошли */
+            filter: contrast(1.3) brightness(0.4) grayscale(0.1);
             background-image: url('https://unsplash.com');
             background-size: cover;
             background-position: center;
-            /* Эффект глубокого, плавного дыхания */
-            animation: breathing 6s infinite ease-in-out;
+        }
+        /* Класс активного дыхания, включится после старта */
+        .active-breath {
+            animation: breathing 6s infinite ease-in-out !important;
         }
         @keyframes breathing {
-            0%, 100% { transform: scale(1.0); filter: contrast(1.3) brightness(0.4); }
-            50% { transform: scale(1.04); filter: contrast(1.3) brightness(0.55); }
+            0%, 100 Tri-scale(1.0); filter: contrast(1.3) brightness(0.4); opacity: 0.35; }
+            50% { transform: scale(1.04); filter: contrast(1.3) brightness(0.55); opacity: 0.45; }
         }
         canvas {
             position: absolute;
@@ -50,49 +51,49 @@
             height: 100%;
             z-index: 2;
             mix-blend-mode: screen;
+            display: none; /* Появится после старта */
         }
-        #overlay-ui {
+        /* Экран входа — чтобы обойти блокировки браузеров */
+        #start-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 3;
+            z-index: 4;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            padding: 60px 20px;
-            pointer-events: none;
+            background: rgba(2, 5, 4, 0.9);
             text-align: center;
-            background: radial-gradient(circle, rgba(2,5,4,0) 30%, rgba(2,5,4,0.85) 100%);
+            padding: 20px;
+            cursor: pointer;
         }
         .brand-title {
-            font-size: 24px;
+            font-size: 26px;
             letter-spacing: 6px;
             text-transform: uppercase;
-            font-weight: 300;
             color: #ffd700;
+            margin-bottom: 20px;
             text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
         }
-        .center-instruction {
-            font-size: 13px;
+        .btn-enter {
+            padding: 15px 40px;
+            border: 1px solid #e6ca65;
+            background: transparent;
+            color: #fffdf0;
+            font-size: 14px;
             letter-spacing: 4px;
             text-transform: uppercase;
-            color: #8fa89b;
-            opacity: 0.7;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(230, 202, 101, 0.2);
+            transition: all 0.3s ease;
         }
-        .action-call {
-            font-size: 15px;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            color: #fffdf0;
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
-            animation: pulse 2.5s infinite ease-in-out;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
+        .btn-enter:hover {
+            background: #e6ca65;
+            color: #020504;
+            box-shadow: 0 0 25px rgba(230, 202, 101, 0.6);
         }
     </style>
 </head>
@@ -100,10 +101,9 @@
 
     <div id="bg-art"></div>
     
-    <div id="overlay-ui">
+    <div id="start-screen" onclick="startMeditation()">
         <div class="brand-title">AG: Forests of Madness 2.0</div>
-        <div class="center-instruction">ВКЛЮЧИ ЗВУК И НАУШНИКИ</div>
-        <div class="action-call">ТАПНИ ДЛЯ ВХОДА В ТРАНС</div>
+        <button class="btn-enter">ВОЙТИ В ТРАНС</button>
     </div>
 
     <canvas id="meditationCanvas"></canvas>
@@ -112,6 +112,10 @@
         const canvas = document.getElementById('meditationCanvas');
         const ctx = canvas.getContext('2d');
         const bgArt = document.getElementById('bg-art');
+        const startScreen = document.getElementById('start-screen');
+
+        let audioCtx = null;
+        const entities = [];
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -120,69 +124,55 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // 🎵 ЗВУКОВОЙ ДВИЖОК БЕЗ ВНЕШНИХ ССЫЛОК (Синтезируем гипнотический эмбиент и птиц прямо кодом!)
-        let audioCtx = null;
-        let isAudioPlaying = false;
-
-        function initHypnoAudio() {
-            if (isAudioPlaying) return;
+        // Запуск по клику на кнопку
+        function startMeditation() {
+            startScreen.style.display = 'none';
+            canvas.style.display = 'block';
+            bgArt.classList.add('active-breath');
             
-            // Создаем аудио-контекст
+            // Запускаем легальный звук без банов браузера
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
-            // 1. Глубокий шаманский гул (Бас-эмбиент)
             const osc = audioCtx.createOscillator();
             const gainOsc = audioCtx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(55, audioCtx.currentTime); // Очень низкая частота 55 Гц
-            gainOsc.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(55, audioCtx.currentTime); 
+            gainOsc.gain.setValueAtTime(0.25, audioCtx.currentTime);
             
-            // Модуляция гула, чтобы он "плавал"
             const lfo = audioCtx.createOscillator();
             const gainLfo = audioCtx.createGain();
-            lfo.frequency.setValueAtTime(0.2, audioCtx.currentTime); // 0.2 Гц
-            gainLfo.gain.setValueAtTime(15, audioCtx.currentTime);
+            lfo.frequency.setValueAtTime(0.2, audioCtx.currentTime); 
+            gainLfo.gain.setValueAtTime(12, audioCtx.currentTime);
+            
             lfo.connect(gainLfo);
             gainLfo.connect(osc.frequency);
-            
             osc.connect(gainOsc);
             gainOsc.connect(audioCtx.destination);
+            
             osc.start();
             lfo.start();
 
-            // 2. Генератор случайного щебета птиц во времени
+            // Птички поют раз в 3 секунды
             setInterval(() => {
-                if (Math.random() > 0.4) spawnBirdSound();
-            }, 2500);
+                if (audioCtx && Math.random() > 0.3) {
+                    const now = audioCtx.currentTime;
+                    const bOsc = audioCtx.createOscillator();
+                    const bGain = audioCtx.createGain();
+                    bOsc.type = 'sine';
+                    bOsc.frequency.setValueAtTime(700 + Math.random() * 500, now);
+                    bOsc.frequency.exponentialRampToValueAtTime(1400 + Math.random() * 400, now + 0.15);
+                    bGain.gain.setValueAtTime(0, now);
+                    bGain.gain.linearRampToValueAtTime(0.03, now + 0.05);
+                    bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    bOsc.connect(bGain);
+                    bGain.connect(audioCtx.destination);
+                    bOsc.start();
+                    bOsc.stop(now + 0.3);
+                }
+            }, 3000);
 
-            isAudioPlaying = true;
-            document.querySelector('.action-call').style.display = 'none'; // Убираем призыв к тапу
+            animate();
         }
-
-        function spawnBirdSound() {
-            if (!audioCtx) return;
-            const now = audioCtx.currentTime;
-            const birdOsc = audioCtx.createOscillator();
-            const birdGain = audioCtx.createGain();
-            
-            birdOsc.type = 'sine';
-            // Быстро прыгающая высокая частота, имитирующая порхание и свист птицы
-            birdOsc.frequency.setValueAtTime(800 + Math.random() * 400, now);
-            birdOsc.frequency.exponentialRampToValueAtTime(1500 + Math.random() * 500, now + 0.15);
-            birdOsc.frequency.exponentialRampToValueAtTime(600 + Math.random() * 300, now + 0.3);
-            
-            birdGain.gain.setValueAtTime(0, now);
-            birdGain.gain.linearRampToValueAtTime(0.04, now + 0.05);
-            birdGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-            
-            birdOsc.connect(birdGain);
-            birdGain.connect(audioCtx.destination);
-            birdOsc.start();
-            birdOsc.stop(now + 0.3);
-        }
-
-        // 💥 ВИЗУАЛЬНЫЙ ДВИЖОК: Круги и порхающие птицы-частицы
-        const entities = [];
 
         class GoldWave {
             constructor(x, y) {
@@ -195,7 +185,6 @@
                 this.speed = Math.random() * 2 + 2; 
                 this.alpha = 1;
                 this.type = 'wave';
-                this.color = 'rgba(255,215,0,';
             }
             update() {
                 this.radius += this.speed;
@@ -206,22 +195,21 @@
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.strokeStyle = this.color + this.alpha + ')';
+                ctx.strokeStyle = 'rgba(255,215,0,' + this.alpha + ')';
                 ctx.lineWidth = this.lineWidth;
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = 'rgba(255,215,0,0.4)';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ffd700';
                 ctx.stroke();
                 ctx.restore();
             }
         }
 
-        // Класс порхающих чернильных птиц
         class ForestBird {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
                 this.vx = (Math.random() - 0.5) * 4;
-                this.vy = -Math.random() * 3 - 2; // Летят вверх и вбок
+                this.vy = -Math.random() * 3 - 2; 
                 this.alpha = 1;
                 this.size = Math.random() * 6 + 4;
                 this.wingPhase = Math.random() * 10;
@@ -231,7 +219,7 @@
                 this.x += this.vx;
                 this.y += this.vy;
                 this.wingPhase += 0.3;
-                this.alpha -= 0.015; // Медленно тают в воздухе
+                this.alpha -= 0.015;
             }
             draw() {
                 if (this.alpha <= 0) return;
@@ -240,28 +228,39 @@
                 ctx.fillStyle = '#ffd700';
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = '#ffd700';
-                
-                // Рисуем силуэт порхающих крыльев
                 ctx.beginPath();
-                const wingSpread = Math.sin(this.wingPhase) * this.size;
+                const wing = Math.sin(this.wingPhase) * this.size;
                 ctx.moveTo(this.x, this.y);
-                ctx.quadraticCurveTo(this.x - this.size, this.y - wingSpread, this.x - this.size*1.5, this.y - this.size*0.5);
-                ctx.quadraticCurveTo(this.x - this.size*0.5, this.y, this.x, this.y);
-                ctx.quadraticCurveTo(this.x + this.size*0.5, this.y, this.x + this.size*1.5, this.y - this.size*0.5);
-                ctx.quadraticCurveTo(this.x + this.size, this.y - wingSpread, this.x, this.y);
+                ctx.quadraticCurveTo(this.x - this.size, this.y - wing, this.x - this.size * 1.5, this.y - this.size * 0.5);
+                ctx.quadraticCurveTo(this.x - this.size * 0.5, this.y, this.x, this.y);
+                ctx.quadraticCurveTo(this.x + this.size * 0.5, this.y, this.x + this.size * 1.5, this.y - this.size * 0.5);
+                ctx.quadraticCurveTo(this.x + this.size, this.y - wing, this.x, this.y);
                 ctx.fill();
                 ctx.restore();
             }
         }
 
         function triggerEffect(clientX, clientY) {
-            // Включаем звук при первом клике
-            initHypnoAudio();
-
-            // Пускаем волны
+            if (!audioCtx) return;
             entities.push(new GoldWave(clientX, clientY));
-            setTimeout(() => entities.push(new GoldWave(clientX, clientY)), 150);
+            for (let i = 0; i < 2; i++) {
+                entities.push(new ForestBird(clientX, clientY));
+            }
+            bgArt.style.transform = `scale(1.02) translate(${(Math.random()-0.5)*6}px, ${(Math.random()-0.5)*6}px)`;
+            setTimeout(() => { bgArt.style.transform = 'scale(1) translate(0,0)'; }, 300);
+        }
 
-            // Выпускаем стаю порхающих птиц из точки тапа
-            for (let i = 0; i < 3; i++) {
-                
+        window.addEventListener('mousedown', (e) => { triggerEffect(e.clientX, e.clientY); });
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches.length > 0) {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    triggerEffect(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+                }
+            }
+        }, { passive: true });
+
+        function animate() {
+            ctx.fillStyle = 'rgba(2, 5, 4, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        
