@@ -2,201 +2,266 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>AG: Forests of Madness 2.0</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #050807; font-family: 'Georgia', serif; }
-        
-        #app-container {
-            position: relative; width: 100%; height: 100%; max-width: 500px; margin: 0 auto;
-            background: url('ag-forest.png') center center no-repeat; background-size: cover;
-            box-shadow: 0 0 100px rgba(0,0,0,0.9); overflow: hidden; cursor: pointer;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
-
-        /* Гипнотическое дыхание бабы и тканей */
-        #breathing-layer {
-            position: absolute; width: 100%; height: 100%;
-            background: inherit; background-size: inherit; background-position: inherit;
-            animation: breathe 5.5s ease-in-out infinite;
-            transform-origin: 55% 42%; z-index: 2; pointer-events: none;
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020504;
+            font-family: 'Cinzel', 'Georgia', serif;
+            color: #e6ca65;
         }
-        @keyframes breathe {
-            0%, 100% { transform: scale(1) translate(0, 0); filter: brightness(1); }
-            50% { transform: scale(1.022) translate(2px, -1px); filter: brightness(1.09); }
+        /* Главный фон: Живая баба, которая плавно дышит */
+        #bg-art {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.4;
+            filter: contrast(1.3) brightness(0.5) grayscale(0.1);
+            /* Замени ссылку ниже на свой арт с бабой, если нужно! */
+            background-image: url('https://unsplash.com');
+            background-size: cover;
+            background-position: center;
+            /* Эффект глубокого, плавного дыхания */
+            animation: breathing 6s infinite ease-in-out;
         }
-
-        /* Интерактивные зоны тапов */
-        .touch-zone { position: absolute; z-index: 10; transform: translate(-50%, -50%); border-radius: 50%; -webkit-tap-highlight-color: transparent; }
-        
-        /* Клеймо бренда AG со всевидящим оком */
-        #ag-brand-zone { width: 34%; height: 18%; left: 22%; bottom: 5%; }
-        #eye-blink {
-            position: absolute; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); border-radius: 50%;
-            opacity: 0; transition: opacity 0.1s ease-in-out; pointer-events: none;
-            box-shadow: inset 0 0 25px #000;
+        @keyframes breathing {
+            0%, 100% { transform: scale(1.0); filter: contrast(1.3) brightness(0.4); }
+            50% { transform: scale(1.04); filter: contrast(1.3) brightness(0.55); }
         }
-        #eye-blink.active { opacity: 0.95; }
-
-        /* Полярная сова на руке */
-        #owl-zone { width: 22%; height: 18%; left: 40%; top: 40%; }
-
-        /* Хор Птиц-Вестников вокруг */
-        #bird-top-left { width: 16%; height: 12%; left: 16%; top: 28%; }
-        #bird-top-center { width: 18%; height: 14%; left: 34%; top: 7%; }
-        #bird-top-right { width: 16%; height: 12%; left: 76%; top: 12%; }
-        #bird-mid-right { width: 18%; height: 14%; left: 88%; top: 25%; }
-        #bird-low-right { width: 16%; height: 12%; left: 80%; top: 52%; }
-
-        /* Алые губы бабы */
-        #lips-zone { width: 10%; height: 5%; left: 59%; top: 24%; }
-        #lips-glow {
-            position: absolute; width: 100%; height: 100%;
-            background: #ff0033; filter: blur(10px); border-radius: 50%;
-            opacity: 0; transition: opacity 0.15s; pointer-events: none;
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            mix-blend-mode: screen;
         }
-        #lips-glow.active { opacity: 0.8; }
-
-        /* Золотые искры за пальцем */
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
-        
-        /* Подсказка для 1-го клика */
-        #start-hint {
-            position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%);
-            color: #d4af37; font-size: 13px; letter-spacing: 3px; text-align: center;
-            text-transform: uppercase; z-index: 20; pointer-events: none;
-            text-shadow: 0 0 15px #000; animation: pulseGlow 2.5s infinite;
+        #overlay-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 60px 20px;
+            pointer-events: none;
+            text-align: center;
+            background: radial-gradient(circle, rgba(2,5,4,0) 30%, rgba(2,5,4,0.85) 100%);
         }
-        @keyframes pulseGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; text-shadow: 0 0 20px #d4af37; } }
+        .brand-title {
+            font-size: 24px;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            font-weight: 300;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+        .center-instruction {
+            font-size: 13px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #8fa89b;
+            opacity: 0.7;
+        }
+        .action-call {
+            font-size: 15px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: #fffdf0;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            animation: pulse 2.5s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="app-container">
-        <div id="start-hint">НАДЕНЬ НАУШНИКИ<br><br>ТАПНИ ДЛЯ ВХОДА В ТРАНС</div>
-        <div id="breathing-layer"></div>
-        
-        <div id="ag-brand-zone" class="touch-zone"><div id="eye-blink"></div></div>
-        <div id="owl-zone" class="touch-zone"></div>
-        
-        <!-- Полный хор птичек на своих местах -->
-        <div id="bird-top-left" class="touch-zone"></div>
-        <div id="bird-top-center" class="touch-zone"></div>
-        <div id="bird-top-right" class="touch-zone"></div>
-        <div id="bird-mid-right" class="touch-zone"></div>
-        <div id="bird-low-right" class="touch-zone"></div>
-        
-        <div id="lips-zone" class="touch-zone"><div id="lips-glow"></div></div>
-
-        <canvas id="canvas-sparkles"></canvas>
+    <div id="bg-art"></div>
+    
+    <div id="overlay-ui">
+        <div class="brand-title">AG: Forests of Madness 2.0</div>
+        <div class="center-instruction">ВКЛЮЧИ ЗВУК И НАУШНИКИ</div>
+        <div class="action-call">ТАПНИ ДЛЯ ВХОДА В ТРАНС</div>
     </div>
 
+    <canvas id="meditationCanvas"></canvas>
+
     <script>
+        const canvas = document.getElementById('meditationCanvas');
+        const ctx = canvas.getContext('2d');
+        const bgArt = document.getElementById('bg-art');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 🎵 ЗВУКОВОЙ ДВИЖОК БЕЗ ВНЕШНИХ ССЫЛОК (Синтезируем гипнотический эмбиент и птиц прямо кодом!)
         let audioCtx = null;
-        let bL_osc = null, bR_osc = null;
+        let isAudioPlaying = false;
 
-        // Генерация низкого, зацикленного бинаурального эмбиента на ходу
-        function startHtonicAmbient() {
-            if (audioCtx) return;
+        function initHypnoAudio() {
+            if (isAudioPlaying) return;
+            
+            // Создаем аудио-контекст
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const merger = audioCtx.createChannelMerger(2);
             
-            bL_osc = audioCtx.createOscillator();
-            bL_osc.type = 'sawtooth';
-            bL_osc.frequency.setValueAtTime(50, audioCtx.currentTime); // 50 Гц бас в левое ухо
-            const filterL = audioCtx.createBiquadFilter();
-            filterL.type = 'lowpass'; filterL.frequency.setValueAtTime(70, audioCtx.currentTime);
-            const gainL = audioCtx.createGain(); gainL.gain.setValueAtTime(0.12, audioCtx.currentTime);
-            bL_osc.connect(filterL).connect(gainL).connect(merger, 0, 0);
-
-            bR_osc = audioCtx.createOscillator();
-            bR_osc.type = 'sawtooth';
-            bR_osc.frequency.setValueAtTime(54.5, audioCtx.currentTime); // 54.5 Гц в правое ухо (разница 4.5 Гц)
-            const filterR = audioCtx.createBiquadFilter();
-            filterR.type = 'lowpass'; filterR.frequency.setValueAtTime(70, audioCtx.currentTime);
-            const gainR = audioCtx.createGain(); gainR.gain.setValueAtTime(0.12, audioCtx.currentTime);
-            bR_osc.connect(filterR).connect(gainR).connect(merger, 0, 1);
-
-            merger.connect(audioCtx.destination);
-            bL_osc.start(); bR_osc.start();
-        }
-
-        // Синтезированные звуки птиц (Дофаминовая петля + случайная 3D панорама)
-        function playBirdSound(type) {
-            if (!audioCtx) return;
+            // 1. Глубокий шаманский гул (Бас-эмбиент)
             const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-
-            // НЛП-фишка: эффект редкого случайного вознаграждения (1 шанс из 7)
-            const isSecretTrig = Math.random() < 0.14;
-
-            if (type === 'owl') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(160, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.45);
-                gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-                if (panner) panner.pan.setValueAtTime(-0.4, audioCtx.currentTime); // Слева
-            } else if (isSecretTrig) {
-                // Тот самый редкий потусторонний шепот/аккорд в ухо
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(190, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.7);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                if (panner) panner.pan.setValueAtTime(Math.random() * 2 - 1, audioCtx.currentTime);
-            } else {
-                // Разные частоты под каждую лесную птичку
-                osc.type = 'sine';
-                let freq = 800;
-                if (type === 'top-left') freq = 700;
-                if (type === 'top-center') freq = 1100;
-                if (type === 'top-right') freq = 950;
-                if (type === 'mid-right') freq = 1300;
-                if (type === 'low-right') freq = 600;
-
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(freq * 1.3, audioCtx.currentTime + 0.22);
-                gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
-                if (panner) panner.pan.setValueAtTime(Math.random() * 2 - 1, audioCtx.currentTime);
-            }
-
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            const gainOsc = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(55, audioCtx.currentTime); // Очень низкая частота 55 Гц
+            gainOsc.gain.setValueAtTime(0.3, audioCtx.currentTime);
             
-            if (panner) {
-                osc.connect(panner).connect(gain).connect(audioCtx.destination);
-            } else {
-                osc.connect(gain).connect(audioCtx.destination);
-            }
+            // Модуляция гула, чтобы он "плавал"
+            const lfo = audioCtx.createOscillator();
+            const gainLfo = audioCtx.createGain();
+            lfo.frequency.setValueAtTime(0.2, audioCtx.currentTime); // 0.2 Гц
+            gainLfo.gain.setValueAtTime(15, audioCtx.currentTime);
+            lfo.connect(gainLfo);
+            gainLfo.connect(osc.frequency);
             
-            osc.start(); osc.stop(audioCtx.currentTime + 0.55);
+            osc.connect(gainOsc);
+            gainOsc.connect(audioCtx.destination);
+            osc.start();
+            lfo.start();
+
+            // 2. Генератор случайного щебета птиц во времени
+            setInterval(() => {
+                if (Math.random() > 0.4) spawnBirdSound();
+            }, 2500);
+
+            isAudioPlaying = true;
+            document.querySelector('.action-call').style.display = 'none'; // Убираем призыв к тапу
         }
 
-        // Глухой щелчок Всевидящего Ока бренда AG
-        function playClickSound() {
+        function spawnBirdSound() {
             if (!audioCtx) return;
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(75, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 0.16);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.16);
-            osc.connect(gain).connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.17);
+            const now = audioCtx.currentTime;
+            const birdOsc = audioCtx.createOscillator();
+            const birdGain = audioCtx.createGain();
+            
+            birdOsc.type = 'sine';
+            // Быстро прыгающая высокая частота, имитирующая порхание и свист птицы
+            birdOsc.frequency.setValueAtTime(800 + Math.random() * 400, now);
+            birdOsc.frequency.exponentialRampToValueAtTime(1500 + Math.random() * 500, now + 0.15);
+            birdOsc.frequency.exponentialRampToValueAtTime(600 + Math.random() * 300, now + 0.3);
+            
+            birdGain.gain.setValueAtTime(0, now);
+            birdGain.gain.linearRampToValueAtTime(0.04, now + 0.05);
+            birdGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            
+            birdOsc.connect(birdGain);
+            birdGain.connect(audioCtx.destination);
+            birdOsc.start();
+            birdOsc.stop(now + 0.3);
         }
 
-        // Вздох алых губ бабы
-        function playLipSound() {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(420, audioCtx.currentTime + 0.25);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
-            osc.connect(gain).connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.36);
+        // 💥 ВИЗУАЛЬНЫЙ ДВИЖОК: Круги и порхающие птицы-частицы
+        const entities = [];
+
+        class GoldWave {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 5;
+                const maxDim = Math.max(canvas.width, canvas.height);
+                this.maxRadius = Math.random() * (maxDim * 0.15) + (maxDim * 0.08); 
+                this.lineWidth = Math.random() * 2 + 1;
+                this.speed = Math.random() * 2 + 2; 
+                this.alpha = 1;
+                this.type = 'wave';
+                this.color = 'rgba(255,215,0,';
+            }
+            update() {
+                this.radius += this.speed;
+                this.alpha = 1 - (this.radius / this.maxRadius);
+            }
+            draw() {
+                if (this.alpha <= 0) return;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = this.color + this.alpha + ')';
+                ctx.lineWidth = this.lineWidth;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = 'rgba(255,215,0,0.4)';
+                ctx.stroke();
+                ctx.restore();
+            }
         }
 
-        let isPlaying = false;
-        function activate() {
-            if (!isPlaying) {
-                startHtonicAmbient();
+        // Класс порхающих чернильных птиц
+        class ForestBird {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = -Math.random() * 3 - 2; // Летят вверх и вбок
+                this.alpha = 1;
+                this.size = Math.random() * 6 + 4;
+                this.wingPhase = Math.random() * 10;
+                this.type = 'bird';
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.wingPhase += 0.3;
+                this.alpha -= 0.015; // Медленно тают в воздухе
+            }
+            draw() {
+                if (this.alpha <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = '#ffd700';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffd700';
+                
+                // Рисуем силуэт порхающих крыльев
+                ctx.beginPath();
+                const wingSpread = Math.sin(this.wingPhase) * this.size;
+                ctx.moveTo(this.x, this.y);
+                ctx.quadraticCurveTo(this.x - this.size, this.y - wingSpread, this.x - this.size*1.5, this.y - this.size*0.5);
+                ctx.quadraticCurveTo(this.x - this.size*0.5, this.y, this.x, this.y);
+                ctx.quadraticCurveTo(this.x + this.size*0.5, this.y, this.x + this.size*1.5, this.y - this.size*0.5);
+                ctx.quadraticCurveTo(this.x + this.size, this.y - wingSpread, this.x, this.y);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function triggerEffect(clientX, clientY) {
+            // Включаем звук при первом клике
+            initHypnoAudio();
+
+            // Пускаем волны
+            entities.push(new GoldWave(clientX, clientY));
+            setTimeout(() => entities.push(new GoldWave(clientX, clientY)), 150);
+
+            // Выпускаем стаю порхающих птиц из точки тапа
+            for (let i = 0; i < 3; i++) {
+                
